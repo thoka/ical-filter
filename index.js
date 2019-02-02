@@ -1,7 +1,3 @@
-// read ical data
-const NodeCache = require("node-cache") 
-const cache = new NodeCache()
-
 const fs = require('fs-extra')
 const ical = require('ical.js')
 const filter = require('array-filter')
@@ -15,12 +11,14 @@ const sanitize = require('sanitize-filename')
 
 const app = decorateApp(express())
 
+const NodeCache = require("node-cache")
+const cache = new NodeCache( { stdTTL: 1000, checkperiod: 120 } )
+
 // logging
 // docs: https://github.com/adpushup/woodlot
 app.use(woodlot({
     streams: ['./app.log'],
     stdout: true,     
-    routes: 
     userAnalytics: {
         platform: true,
         country: true
@@ -36,9 +34,6 @@ app.use(woodlot({
         }
     }
 }));
-
-// machbar iCAL: 
-// https://calendar.google.com/calendar/ical/j68lhv614hbv3u4ttbrs6glhpg%40group.calendar.google.com/public/basic.ics
 
 app.use(express.static('static'))
 
@@ -71,11 +66,15 @@ app.listen(3000, function () {
   console.log('iCAL filter proxy  on port 3000!')
 })
 
-
 async function load_ical_from_url(url) {
-	var data = await request(url)
-	var caldata = ical.parse(data)
-	return new ical.Component(caldata)	
+	var data = cache.get(url)
+	if (data===undefined) {
+		data = await request(url)
+		var caldata = ical.parse(data)
+		data = new ical.Component(caldata)
+	    cache.set(url,data)
+	}
+	return data
 }
 
 function filter_ics(cal, regexp) {
@@ -103,8 +102,3 @@ function change_UIDs(cal, append) {
 		item.updatePropertyWithValue("uid",uid+append)
 	}
 }
-
-
-
-
-
