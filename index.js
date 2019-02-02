@@ -66,7 +66,6 @@ app.getAsync('/filter', async function (req, res) {
   res.contentType("text/calendar")
 
   res.send(
-	  // "hallo allerseits "+ req.query.url + ":" + req.query.find
 	  await filter_ics(req.query.url,req.query.filter)
   )
 })
@@ -85,14 +84,12 @@ function delete_vevent( find ) {
 			const match = rtest.test(prop.jCal[3])
 			if (match) { return false }
 		}
-     	// console.log("remove one")
 		return true
 	}
 }
 
 async function filter_ics(url, find) {
 
-	// var data = await fs.readFile(fn,"utf-8")
 	var data = await request(url)
 	var caldata = ical.parse(data)
 	var cal = new ical.Component(caldata)
@@ -100,10 +97,10 @@ async function filter_ics(url, find) {
 	var items_to_delete = filter(
 		cal.getAllSubcomponents("vevent"),
 		delete_vevent(find))
-	// cal[2] = filtered_items
 	for (var item of items_to_delete) cal.removeSubcomponent(item)
+
+
 	var result =  cal.toString()
-	// console.log(result)
 	return result
 
 }
