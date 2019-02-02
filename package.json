@@ -12,7 +12,8 @@
     "jsical": "^0.0.5",
     "node-cache": "^4.2.0",
     "request": "^2.88.0",
-    "request-promise-native": "^1.0.5"
+    "request-promise-native": "^1.0.5",
+    "sanitize-filename": "^1.6.1"
   },
   "devDependencies": {},
   "scripts": {

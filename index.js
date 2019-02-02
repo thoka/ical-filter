@@ -10,6 +10,8 @@ const request = require('request-promise-native')
 const express = require('express')
 const { decorateApp } = require('@awaitjs/express')
 
+const sanitize = require('sanitize-filename')
+
 const app = decorateApp(express())
 
 // machbar iCAL: 
@@ -63,10 +65,22 @@ app.getAsync('/filter', async function (req, res) {
   if (req.query.url==null) {throw new Error("url parameter mising")}
   if (req.query.filter==null) {throw new Error("filter parameter mising")}
 
-  res.contentType("text/calendar")
+  const filter = req.query.filter
+  const filter_encoded = encodeURI(filter)
 
+
+  const cal = await load_ical_from_url(req.query.url)
+
+  filter_ics(cal,filter)
+  change_UIDs(cal,"+"+filter_encoded) //enable events to show up twice in google calendar
+
+  var filename=cal.getFirstPropertyValue('x-wr-calname')+" (filtered by "+filter_encoded+")"
+  cal.updatePropertyWithValue('x-wr-calname',filename)
+  
+  res.setHeader('Content-disposition', 'attachment; filename=' + sanitize(filename) + ".ics");
+  res.contentType("text/calendar")
   res.send(
-	  await filter_ics(req.query.url,req.query.filter)
+	  cal.toString()
   )
 })
 
@@ -74,10 +88,22 @@ app.listen(3000, function () {
   console.log('iCAL filter proxy  on port 3000!')
 })
 
-function delete_vevent( find ) {
 
-	const rtest = new RegExp(find,"i")
+async function load_ical_from_url(url) {
+	var data = await request(url)
+	var caldata = ical.parse(data)
+	return new ical.Component(caldata)	
+}
 
+function filter_ics(cal, regexp) {
+	var items_to_delete = filter(
+		cal.getAllSubcomponents("vevent"),
+		event_does_not_contain_this_regexp(regexp))
+	for (var item of items_to_delete) cal.removeSubcomponent(item)
+}
+
+function event_does_not_contain_this_regexp( r ) {
+	const rtest = new RegExp(r,"i")
 	return (e) => {
 		for (var prop of e.getAllProperties() ) {
 			if (prop.type!=="text") continue
@@ -88,28 +114,14 @@ function delete_vevent( find ) {
 	}
 }
 
-async function filter_ics(url, find) {
-
-	var data = await request(url)
-	var caldata = ical.parse(data)
-	var cal = new ical.Component(caldata)
-	var find_encoded = encodeURI(find)
-
-	var items_to_delete = filter(
-		cal.getAllSubcomponents("vevent"),
-		delete_vevent(find))
-	for (var item of items_to_delete) cal.removeSubcomponent(item)
-
-	//change UIDs to enable to show up twice in google calendar
+function change_UIDs(cal, append) {
 	for (var item of cal.getAllSubcomponents("vevent")) {
 		var uid = item.getFirstPropertyValue("uid")
-		item.updatePropertyWithValue("uid",uid+"+"+find_encoded)
+		item.updatePropertyWithValue("uid",uid+append)
 	}
-
-	var result =  cal.toString()
-	return result
-
 }
+
+
 
 
 
