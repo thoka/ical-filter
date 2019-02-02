@@ -17,44 +17,7 @@ const app = decorateApp(express())
 // machbar iCAL: 
 // https://calendar.google.com/calendar/ical/j68lhv614hbv3u4ttbrs6glhpg%40group.calendar.google.com/public/basic.ics
 
-app.get('/', (req,res) => {
-	res.send(`
-<html><head>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-</head><body>
-<div class="hero-unit">
-<form class="form-horizontal" method="get" action="/filter">
-<fieldset>
-
-<legend>iCAL Filter</legend>
-
-<div class="form-group">
-  <label class="col-md-4 control-label" for="url">URL</label>  
-  <div class="col-md-8">
-  <input id="url" name="url" type="text" placeholder="enter some iCAL URL" class="form-control input-md" required="">    
-  </div>
-</div>
-
-<div class="form-group">
-  <label class="col-md-4 control-label" for="filter">Filter</label>  
-  <div class="col-md-4">
-  <input id="filter" name="filter" type="text" placeholder="enter some Text to search inside events" class="form-control input-md" required="">
-    
-  </div>
-</div>
-
-<div class="form-group">
-  <div class="col-md-4">
-    <button id="go" name="go" class="btn btn-primary">go</button>
-  </div>
-</div>
-
-</fieldset>
-</form>
-</div>
-</body>
-`)
-})
+app.use(express.static('static'))
 
 app.getAsync('/filter', async function (req, res) {
   // console.log(req)
@@ -68,14 +31,13 @@ app.getAsync('/filter', async function (req, res) {
   const filter = req.query.filter
   const filter_encoded = encodeURI(filter)
 
-
   const cal = await load_ical_from_url(req.query.url)
 
   filter_ics(cal,filter)
   change_UIDs(cal,"+"+filter_encoded) //enable events to show up twice in google calendar
 
   var filename=cal.getFirstPropertyValue('x-wr-calname')+" (filtered by "+filter_encoded+")"
-  cal.updatePropertyWithValue('x-wr-calname',filename)
+  cal.updatePropertyWithValue('x-wr-calname',encodeURI(filename))
   
   res.setHeader('Content-disposition', 'attachment; filename=' + sanitize(filename) + ".ics");
   res.contentType("text/calendar")

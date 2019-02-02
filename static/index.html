@@ -1,0 +1,51 @@
+<html><head>
+<meta charset="UTF-8"> 
+<link rel="stylesheet" 
+  href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+  integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" 
+  crossorigin="anonymous">
+</head><body>
+<div class="container"> 
+<form id="form" name="form" class="jumbotron" method="get" action="/filter">
+<fieldset>
+
+<legend>iCAL Filter</legend>
+
+<div class="form-group">
+  <label for="url">URL</label>  
+  <input id="url" name="url" type="text" placeholder="enter some iCAL URL" class="form-control input-md" required="" oninput="changed()">    
+</div>
+
+<div class="form-group">
+  <label for="filter">Filter</label>  
+  <input id="filter" name="filter" type="text" placeholder="enter some Text to search inside events" class="form-control input-md" required="" oninput="changed()">
+</div>
+
+<div class="form-group" onclick="copy()">
+  <label for="target" onclick="copy()">iCAL URL</label> 
+  <input id="target" name="target" type="text" placeholder="resulting url" class="form-control input-md" disabled onclick="copy()">    
+</div>
+
+<div class="form-group">
+  <button type="button" class="btn btn-success" onclick="copy()">copy to clippboard</button>
+  <button id="download" name="download" class="btn btn-primary">download</button>
+</div>
+
+</fieldset>
+</form>
+</div>
+<script>
+  function changed(e) {
+    $('#target').val( window.location.href+'filter?url='+encodeURI($('#url').val())+"&filter="+encodeURI($("#filter").val()) )
+  }
+  function copy() {
+    $('#target').prop('disabled',false).select()
+    document.execCommand('copy')
+    $('#target').prop('disabled',true)    
+  }
+</script>
+<script 
+  src="https://code.jquery.com/jquery-3.3.1.slim.min.js" 
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" 
+  crossorigin="anonymous"></script>
+</body>
