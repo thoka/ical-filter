@@ -36,7 +36,7 @@
 </div>
 <script>
   function changed(e) {
-    $('#target').val( window.location.href+'filter?url='+encodeURI($('#url').val())+"&filter="+encodeURI($("#filter").val()) )
+    $('#target').val( window.location.href+'filter?url='+encodeURIComponent($('#url').val())+"&filter="+encodeURIComponent($("#filter").val()) )
   }
   function copy() {
     $('#target').prop('disabled',false).select()
