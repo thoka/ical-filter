@@ -71,7 +71,7 @@ app.getAsync('/filter', async function (req, res) {
 })
 
 app.listen(3000, function () {
-  console.log('Example app listening on port 3000!')
+  console.log('iCAL filter proxy  on port 3000!')
 })
 
 function delete_vevent( find ) {
@@ -93,12 +93,18 @@ async function filter_ics(url, find) {
 	var data = await request(url)
 	var caldata = ical.parse(data)
 	var cal = new ical.Component(caldata)
+	var find_encoded = encodeURI(find)
 
 	var items_to_delete = filter(
 		cal.getAllSubcomponents("vevent"),
 		delete_vevent(find))
 	for (var item of items_to_delete) cal.removeSubcomponent(item)
 
+	//change UIDs to enable to show up twice in google calendar
+	for (var item of cal.getAllSubcomponents("vevent")) {
+		var uid = item.getFirstPropertyValue("uid")
+		item.updatePropertyWithValue("uid",uid+"+"+find_encoded)
+	}
 
 	var result =  cal.toString()
 	return result
