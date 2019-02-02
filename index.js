@@ -9,10 +9,33 @@ const request = require('request-promise-native')
 
 const express = require('express')
 const { decorateApp } = require('@awaitjs/express')
+const woodlot = require('woodlot').middlewareLogger  
 
 const sanitize = require('sanitize-filename')
 
 const app = decorateApp(express())
+
+// logging
+// docs: https://github.com/adpushup/woodlot
+app.use(woodlot({
+    streams: ['./app.log'],
+    stdout: true,     
+    routes: 
+    userAnalytics: {
+        platform: true,
+        country: true
+    },
+    format: {
+        type: 'json',
+        options: {
+            cookies: true,
+            headers: true,
+            compact: true,
+            spacing: 0,
+            separator: '\n'
+        }
+    }
+}));
 
 // machbar iCAL: 
 // https://calendar.google.com/calendar/ical/j68lhv614hbv3u4ttbrs6glhpg%40group.calendar.google.com/public/basic.ics
@@ -20,16 +43,14 @@ const app = decorateApp(express())
 app.use(express.static('static'))
 
 app.getAsync('/filter', async function (req, res) {
-  // console.log(req)
   // TODO: errorchecking
   // TODO: timeout 
 
-  console.log(req.query)
   if (req.query.url==null) {throw new Error("url parameter mising")}
   if (req.query.filter==null) {throw new Error("filter parameter mising")}
 
   const filter = req.query.filter
-  const filter_encoded = encodeURI(filter)
+  const filter_encoded = encodeURIComponent(filter)
 
   const cal = await load_ical_from_url(req.query.url)
 
