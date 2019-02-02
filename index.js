@@ -111,13 +111,5 @@ async function filter_ics(url, find) {
 
 }
 
-async function print_ics(fn) {
-
-	var data = await fs.readFile(fn,"utf-8")
-	var cal = ical.parse(data)
-	var result =  ical.stringify(cal)
-	return result
-}
-
 
 
