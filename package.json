@@ -1,6 +1,6 @@
 {
   "name": "ical-filter",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "ical filtering proxy",
   "main": "index.js",
   "dependencies": {
@@ -18,8 +18,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js 3000"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Thomas Kalka <thomas.kalka@gmail.com>",
+  "license": "PD"
 }

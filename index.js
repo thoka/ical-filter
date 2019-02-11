@@ -62,8 +62,10 @@ app.getAsync('/filter', async function (req, res) {
   )
 })
 
-app.listen(3000, function () {
-  console.log('iCAL filter proxy  on port 3000!')
+const port = 3000
+
+app.listen(port, function () {
+  console.log(`iCAL filter proxy started on http://localhost:${port}`)
 })
 
 async function load_ical_from_url(url) {
