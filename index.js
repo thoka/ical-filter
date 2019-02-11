@@ -1,106 +1,192 @@
-const fs = require('fs-extra')
+// const fs = require('fs-extra')
 const ical = require('ical.js')
 const filter = require('array-filter')
 const request = require('request-promise-native')
 
 const express = require('express')
 const { decorateApp } = require('@awaitjs/express')
-const woodlot = require('woodlot').middlewareLogger  
+const woodlot = require('woodlot').middlewareLogger
 
 const sanitize = require('sanitize-filename')
 
+const jexl = require('jexl')
+
+jexl.addBinaryOp('like', 50, (left, right) => {
+  if (right === undefined) {
+    // ToDo: I would like to throw an error, but this gets catched somewhere in the promise chain
+    return new Error('try to add " around your search term')
+  }
+  const r = new RegExp(right, 'i')
+  return r.test(left)
+})
+
+const config = require('./config')
+
 const app = decorateApp(express())
 
-const NodeCache = require("node-cache")
-const cache = new NodeCache( { stdTTL: 1000, checkperiod: 120 } )
+const NodeCache = require('node-cache')
+const cache = new NodeCache({ stdTTL: 1000, checkperiod: 120 })
 
 // logging
 // docs: https://github.com/adpushup/woodlot
 app.use(woodlot({
-    streams: ['./app.log'],
-    stdout: true,     
-    userAnalytics: {
-        platform: true,
-        country: true
-    },
-    format: {
-        type: 'json',
-        options: {
-            cookies: true,
-            headers: true,
-            compact: true,
-            spacing: 0,
-            separator: '\n'
-        }
+  streams: ['./app.log'],
+  stdout: true,
+  userAnalytics: {
+    platform: true,
+    country: true
+  },
+  format: {
+    type: 'json',
+    options: {
+      cookies: true,
+      headers: true,
+      compact: true,
+      spacing: 0,
+      separator: '\n'
     }
-}));
+  }
+}))
 
 app.use(express.static('static'))
 
-app.getAsync('/filter', async function (req, res) {
-  // TODO: errorchecking
-  // TODO: timeout 
-
-  if (req.query.url==null) {throw new Error("url parameter mising")}
-  if (req.query.filter==null) {throw new Error("filter parameter mising")}
-
-  const filter = req.query.filter
-  const filter_encoded = encodeURIComponent(filter)
-
-  const cal = await load_ical_from_url(req.query.url)
-
-  filter_ics(cal,filter)
-  change_UIDs(cal,"+"+filter_encoded) //enable events to show up twice in google calendar
-
-  var filename=cal.getFirstPropertyValue('x-wr-calname')+" (filtered by "+filter_encoded+")"
-  cal.updatePropertyWithValue('x-wr-calname',encodeURI(filename))
-  
-  res.setHeader('Content-disposition', 'attachment; filename=' + sanitize(filename) + ".ics");
-  res.contentType("text/calendar")
-  res.send(
-	  cal.toString()
-  )
+app.getAsync('/filter', getFilteredICAL)
+/*
+app.getAsync('/c/:config', (req,res) => {
+  console.log(":config",req.query)
+  get_filtered_ical(req, res)
 })
+*/
 
 const port = 3000
-
 app.listen(port, function () {
   console.log(`iCAL filter proxy started on http://localhost:${port}`)
 })
 
-async function load_ical_from_url(url) {
-	var data = cache.get(url)
-	if (data===undefined) {
-		data = await request(url)
-		var caldata = ical.parse(data)
-		data = new ical.Component(caldata)
-	    cache.set(url,data)
-	}
-	return data
+async function getFilteredICAL (req, res) {
+  // TODO: errorchecking
+  // TODO: timeout
+
+  const q = req.query
+  if (q.url == null) {
+    throw new Error('url parameter mising')
+  }
+
+  if (q.url in config.calendars) {
+    const preset = config.calendars[q.url]
+    q.id = q.id || preset.id || q.url
+    q.url = preset.url
+    q.name = q.name || preset.name
+    q.description = q.description || preset.description
+    q.color = q.color || preset.color
+    q.jexl = q.jexl || preset.jexl
+    q.filter = q.filter || preset.filter
+  }
+
+  if (q.filter == null && q.name == null) {
+    throw new Error('filter or name parameter have to be defined')
+  }
+
+  const feedID = encodeURIComponent(q.filter || q.name)
+  const cal = await loadICALfromURL(q.url)
+
+  console.log('cal:', cal)
+
+  filterICS(cal, q)
+  changeUIDs(cal, '+' + feedID) // enable events to show up twice in google calendar
+
+  if ('color' in q) addColorToDescription(cal)
+
+  var filename = q.name || cal.getFirstPropertyValue('x-wr-calname') + ' (filtered by ' + feedID + ')'
+  cal.updatePropertyWithValue('x-wr-calname', encodeURI(filename))
+
+  res.setHeader('Content-disposition', 'attachment; filename=' + sanitize(filename.replace(':', ' -- ')) + '.ics')
+  res.contentType('text/calendar')
+  res.send(
+    cal.toString()
+  )
 }
 
-function filter_ics(cal, regexp) {
-	var items_to_delete = filter(
-		cal.getAllSubcomponents("vevent"),
-		event_does_not_contain_this_regexp(regexp))
-	for (var item of items_to_delete) cal.removeSubcomponent(item)
+async function loadICALfromURL (url) {
+  var data = cache.get(url)
+  if (data === undefined) {
+    data = await request(url)
+    if (data == null) throw new Error('url not found')
+    try {
+      var caldata = ical.parse(data)
+      data = new ical.Component(caldata)
+      cache.set(url, data)
+    } catch (e) {
+      throw new Error('data not parsable as iCAL')
+    }
+  }
+  return data
 }
 
-function event_does_not_contain_this_regexp( r ) {
-	const rtest = new RegExp(r,"i")
-	return (e) => {
-		for (var prop of e.getAllProperties() ) {
-			if (prop.type!=="text") continue
-			const match = rtest.test(prop.jCal[3])
-			if (match) { return false }
-		}
-		return true
-	}
+function filterICS (cal, args) {
+  var itemsToDelete = filter(
+    cal.getAllSubcomponents('vevent'),
+    filterFactory(args))
+  for (var item of itemsToDelete) cal.removeSubcomponent(item)
 }
 
-function change_UIDs(cal, append) {
-	for (var item of cal.getAllSubcomponents("vevent")) {
-		var uid = item.getFirstPropertyValue("uid")
-		item.updatePropertyWithValue("uid",uid+append)
-	}
+function filterFactory (args) {
+  console.log('filter factory args', args)
+
+  const matchFunctions = []
+
+  if (args.filter) {
+    const rtest = new RegExp(args.filter, 'i')
+    matchFunctions.push(
+      (d) => rtest.test(d._text)
+    )
+  }
+
+  if (args.jexl) {
+    matchFunctions.push(
+      (d) => {
+        console.log(`evaluating ${args.jexl} on ${JSON.stringify(d)}`)
+        return jexl.evalSync(args.jexl, d)
+      }
+    )
+  }
+
+  return (e) => {
+    console.log('-')
+    const properties = e.getAllProperties()
+    const data = { _text: '' }
+
+    for (var prop of properties) {
+      // console.log(prop.type,prop.name,prop.jCal[3])
+      if (prop.type === 'text') {
+        data._text += prop.jCal[3] + '\n'
+        data[prop.name] = prop.jCal[3]
+      } else if (prop.type === 'date-time') {
+        data[prop.name] = new Date(prop.jCal[3])
+      } else {
+        data[prop.name] = prop.jCal[3]
+      }
+    }
+    for (var mf of matchFunctions) {
+      const result = mf(data)
+      if (result instanceof Error) throw result
+      if (!result) return true
+    }
+    return false
+  }
+}
+
+function changeUIDs (cal, append) {
+  for (var item of cal.getAllSubcomponents('vevent')) {
+    var uid = item.getFirstPropertyValue('uid')
+    item.updatePropertyWithValue('uid', uid + append)
+  }
+}
+
+function addColorToDescription (cal) {
+  for (var item of cal.getAllSubcomponents('vevent')) {
+    const d = item.getFirstPropertyValue('description')
+    const color = 'yellow'
+    item.updatePropertyWithValue('uid', `<div style="background-color:${color}>${d}</div>`)
+  }
 }

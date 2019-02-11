@@ -1,29 +1,33 @@
 <html><head>
-<meta charset="UTF-8"> 
-<link rel="stylesheet" 
+<meta charset="UTF-8">
+<link rel="stylesheet"
   href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-  integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" 
+  integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
   crossorigin="anonymous">
 </head><body>
-<div class="container"> 
+<div class="container">
 <form id="form" name="form" class="jumbotron" method="get" action="/filter">
 <fieldset>
 
 <legend>iCAL Filter</legend>
 
 <div class="form-group">
-  <label for="url">URL</label>  
-  <input id="url" name="url" type="text" placeholder="enter some iCAL URL" class="form-control input-md" required="" oninput="changed()">    
+  <label for="url">URL</label>
+  <input id="url" name="url" type="text" placeholder="enter some iCAL URL" class="form-control input-md" required="" oninput="changed()">
 </div>
 
 <div class="form-group">
-  <label for="filter">Filter</label>  
-  <input id="filter" name="filter" type="text" placeholder="enter some Text to search inside events" class="form-control input-md" required="" oninput="changed()">
+  <label for="filter">search</label>
+  <input id="filter" name="filter" type="text" placeholder="enter some Text or regexp to search inside any text property in events" class="form-control input-md" oninput="changed()">
+  <label for="jexl">jexl query</label>
+  <input id="jexl" name="jexl" type="text" placeholder="enter jexl query" class="form-control input-md" oninput="changed()">
+  <label for="color">change color</label>
+  <input id="color" name="color" type="checkbox" value="true" class="" oninput="changed()">
 </div>
 
 <div class="form-group" onclick="copy()">
-  <label for="target" onclick="copy()">iCAL URL</label> 
-  <input id="target" name="target" type="text" placeholder="resulting url" class="form-control input-md" disabled onclick="copy()">    
+  <label for="target" onclick="copy()">iCAL URL</label>
+  <input id="target" name="target" type="text" placeholder="resulting url" class="form-control input-md" disabled onclick="copy()">
 </div>
 
 <div class="form-group">
@@ -36,16 +40,23 @@
 </div>
 <script>
   function changed(e) {
-    $('#target').val( window.location.href+'filter?url='+encodeURIComponent($('#url').val())+"&filter="+encodeURIComponent($("#filter").val()) )
+
+    $('#target').val(
+      window.location.href+'filter?url='
+        +encodeURIComponent($('#url').val())
+        +"&filter="+encodeURIComponent($('#filter').val())
+        +"&jexl="+encodeURIComponent($('#jexl').val())
+        +($('#color').prop('checked') ? "&color=on":"")
+    )
   }
   function copy() {
     $('#target').prop('disabled',false).select()
     document.execCommand('copy')
-    $('#target').prop('disabled',true)    
+    $('#target').prop('disabled',true)
   }
 </script>
-<script 
-  src="https://code.jquery.com/jquery-3.3.1.slim.min.js" 
-  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" 
+<script
+  src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
   crossorigin="anonymous"></script>
 </body>
