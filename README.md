@@ -9,6 +9,12 @@ Express microservice to filter events out of public calendars containing some se
 
 - `http://localhost:3000` your convenient URL-Generator frontend 
 
+
+## Presets
+
+You may define presets for all parameters inside `config.yml`. 
+
+
 ## Related Work
 
 - [Discussion](https://forum.wilap.de/t/eigener-cccp-kalender/140)
@@ -25,6 +31,15 @@ echo "start with 'npm start'"
 
 ## ToDo 
 
-[ ] Add some [filter language](https://memlab.thomaskalka.de/t/js-parsable-filter-languages/136)
-[ ] Cache results
+check if URL points to an ical calendar
+
+convert some known url calendar patterns to ical urls
+
+example:
+
+convert
+`https://calendar.google.com/calendar/embed?src=([^&]*)&(.*)`
+to
+`https://calendar.google.com/calendar/ical/{$1}/public/basic.ics`
+
 
