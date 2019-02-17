@@ -51,12 +51,14 @@ app.use(woodlot({
 app.use(express.static('static'))
 
 app.getAsync('/filter', getFilteredICAL)
-/*
+
 app.getAsync('/c/:config', (req,res) => {
-  console.log(":config",req.query)
-  get_filtered_ical(req, res)
+  const c = req.params.config
+  if (! c in config.calendars) throw new Error(`missing configuration for "${c}"`)
+  req.query.url = req.params.config
+  return getFilteredICAL(req, res)
 })
-*/
+
 
 const port = 3000
 app.listen(port, function () {
@@ -76,18 +78,14 @@ async function getFilteredICAL (req, res) {
     const preset = config.calendars[q.url]
     q.id = q.id || preset.id || q.url
     q.url = preset.url
-    q.name = q.name || preset.name
+    q.name = q.name || preset.name 
     q.description = q.description || preset.description
     q.color = q.color || preset.color
     q.jexl = q.jexl || preset.jexl
     q.filter = q.filter || preset.filter
   }
 
-  if (q.filter == null && q.name == null) {
-    throw new Error('filter or name parameter have to be defined')
-  }
-
-  const feedID = encodeURIComponent(q.filter || q.name)
+  const feedID = encodeURIComponent(q.filter || q.name || q.id || "filtered")
   const cal = await loadICALfromURL(q.url)
 
   console.log('cal:', cal)
