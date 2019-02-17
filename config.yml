@@ -18,22 +18,13 @@ calendars:
       location like "biblio" && description like "repair"
     color:
       red
-  machbar-repaircafe-slb2:
-    name:
-      "machBar on tour: repair-Café in der SLB Potsdam"
-    url:
-      https://calendar.google.com/calendar/ical/j68lhv614hbv3u4ttbrs6glhpg%40group.calendar.google.com/public/basic.ics
-    jexl:
-      location like "biblio" and description like "repair"
-    color:
-      red
   machbar-repaircafe-tf:
     name:
       "machBar on tour: repair-Café im Treffpunkt Freizeit"
     url:
       https://calendar.google.com/calendar/ical/j68lhv614hbv3u4ttbrs6glhpg%40group.calendar.google.com/public/basic.ics
     jexl:
-      ( location like "treff" ) and ( description like "repair" )
+      ( location like "treff" ) && ( description like "repair" )
     color:
       blue
 rewrite:
@@ -41,4 +32,4 @@ rewrite:
     from:
       https://calendar.google.com/calendar/embed?src=([^&]*)&(.*)
     to:
-      https://calendar.google.com/calendar/ical/{$1}/public/basic.ics
+      https://calendar.google.com/calendar/ical/{1}/public/basic.ics
