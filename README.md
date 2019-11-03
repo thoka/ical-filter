@@ -2,13 +2,16 @@
 
 Express microservice to filter events out of public calendars containing some search text.
 
+## Deployment
+
+You can deploy the app to Heroku
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 ## Usage
 
 - `http://localhost:3000/filter?url=URL&filter=FILTER`  
   Replace `URL` with the URL-escaped url of your original iCAL (use [encodeURIComponent](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent) and FILTER with the URL-escaped regular expression you would like to filter the entries with.
-
 - `http://localhost:3000` your convenient URL-Generator frontend 
-
 
 ## Presets
 

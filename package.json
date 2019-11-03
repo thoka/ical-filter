@@ -20,8 +20,11 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "node index.js 3000"
+    "start": "node index.js $PORT"
   },
   "author": "Thomas Kalka <thomas.kalka@gmail.com>",
-  "license": "PD"
+  "license": "PD",
+  "engines": {
+    "node": "12.x"
+  }
 }
