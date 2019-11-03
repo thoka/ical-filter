@@ -1,0 +1,16 @@
+{
+  "name": "ical-filter",
+  "description": "Express microservice to filter events out of public calendars containing some search text.",
+  "repository": "https://github.com/thoka/ical-filter",
+  "website": "https://github.com/thoka/ical-filter",
+  "success_url": "/",
+  "env": {
+  },
+  "image": "heroku/node",
+  "keywords": [
+    "calendar",
+    "web",
+    "ical",
+    "open-source"
+  ]
+}
